@@ -3,6 +3,7 @@ import { sleep, check } from "k6";
 // import {v4 as uuidv4} from "uuid"
 
 const apiBaseUrl = "http://localhost:8000/api";
+const interRequestSleepTime = 0.01;
 
 function generateRandomString() {
   const timestamp = new Date().getTime();
@@ -26,13 +27,13 @@ async function getKeyValuePair(key) {
   };
 }
 
-async function addRandomKeyValuePair() {
-  const randomKey = generateRandomString();
-  const randomValue = generateRandomString();
+async function addKeyValuePair(inputKey = null, inputValue = null) {
+  const key = inputKey !== null ? inputKey : generateRandomString();
+  const value = inputValue !== null ? inputValue : generateRandomString();
 
   const requestBody = {
-    key: randomKey,
-    value: randomValue,
+    key: key,
+    value: value,
   };
   const requestParams = {
     headers: {
@@ -55,11 +56,11 @@ async function addRandomKeyValuePair() {
   };
 }
 
-async function updateKeyValuePair(key) {
-  const randomValue = generateRandomString();
+async function updateKeyValuePair(key, inputValue = null) {
+  const value = inputValue !== null ? inputValue : generateRandomString();
 
   const requestBody = {
-    value: randomValue,
+    value: value,
   };
   const requestParams = {
     headers: {
@@ -101,14 +102,14 @@ async function deleteKeyValuePair(key) {
 }
 
 async function testAddKeyValuePair() {
-  const addRandomResult = await addRandomKeyValuePair();
-
+  const addRandomResult = await addKeyValuePair();
   check(addRandomResult, {
     "check response status": (result) => result.responseStatus === 200,
   });
 
-  const getResult = await getKeyValuePair(addRandomResult.requestData.key);
+  sleep(interRequestSleepTime);
 
+  const getResult = await getKeyValuePair(addRandomResult.requestData.key);
   check(getResult, {
     "check response status": (result) => result.responseStatus === 200,
     "check key": (result) => result.responseData.result.key === addRandomResult.requestData.key,
@@ -117,20 +118,21 @@ async function testAddKeyValuePair() {
 }
 
 async function testUpdateKeyValuePair() {
-  const addRandomResult = await addRandomKeyValuePair();
-
+  const addRandomResult = await addKeyValuePair();
   check(addRandomResult, {
     "check response status": (result) => result.responseStatus === 200,
   });
 
-  const updateResult = await updateKeyValuePair(addRandomResult.requestData.key);
+  sleep(interRequestSleepTime);
 
+  const updateResult = await updateKeyValuePair(addRandomResult.requestData.key);
   check(updateResult, {
     "check response status": (result) => result.responseStatus === 200,
   });
 
-  const getResult = await getKeyValuePair(addRandomResult.requestData.key);
+  sleep(interRequestSleepTime);
 
+  const getResult = await getKeyValuePair(addRandomResult.requestData.key);
   check(getResult, {
     "check response status": (result) => result.responseStatus === 200,
     "check get key": (result) => result.responseData.result.key === addRandomResult.requestData.key,
@@ -139,23 +141,72 @@ async function testUpdateKeyValuePair() {
 }
 
 async function testDeleteKeyValuePair() {
-  const addRandomResult = await addRandomKeyValuePair();
-
+  const addRandomResult = await addKeyValuePair();
   check(addRandomResult, {
     "check response status": (result) => result.responseStatus === 200,
   });
 
-  sleep(0.01);
+  sleep(interRequestSleepTime);
 
   const deleteResult = await deleteKeyValuePair(addRandomResult.requestData.key);
-
   check(deleteResult, {
     "check response status": (result) => result.responseStatus === 200,
   });
 
-  const getResult = await getKeyValuePair(addRandomResult.requestData.key);
+  sleep(interRequestSleepTime);
 
+  const getResult = await getKeyValuePair(addRandomResult.requestData.key);
   check(getResult, {
+    "check response status": (result) => result.responseStatus === 404,
+  });
+}
+
+async function testTryGetNonExistentKey() {
+  const randomKey = generateRandomString();
+
+  const getResult = await getKeyValuePair(randomKey);
+  check(getResult, {
+    "check response status": (result) => result.responseStatus === 404,
+  });
+}
+
+async function testTryAddSameKeyTwice() {
+  const addRandomResult = await addKeyValuePair();
+  check(addRandomResult, {
+    "check response status": (result) => result.responseStatus === 200,
+  });
+
+  sleep(interRequestSleepTime);
+
+  const addAgainResult = await addKeyValuePair(addRandomResult.requestData.key);
+  check(addAgainResult, {
+    "check response status": (result) => result.responseStatus === 400,
+  });
+
+  sleep(interRequestSleepTime);
+
+  const getResult = await getKeyValuePair(addRandomResult.requestData.key);
+  check(getResult, {
+    "check response status": (result) => result.responseStatus === 200,
+    "check key": (result) => result.responseData.result.key === addRandomResult.requestData.key,
+    "check value": (result) => result.responseData.result.value === addRandomResult.requestData.value,
+  });
+}
+
+async function testTryUpdateNonExistentKey() {
+  const randomKey = generateRandomString();
+
+  const updateResult = await updateKeyValuePair(randomKey);
+  check(updateResult, {
+    "check response status": (result) => result.responseStatus === 404,
+  });
+}
+
+async function testTryDeleteNonExistentKey() {
+  const randomKey = generateRandomString();
+
+  const updateResult = await deleteKeyValuePair(randomKey);
+  check(updateResult, {
     "check response status": (result) => result.responseStatus === 404,
   });
 }
@@ -166,4 +217,12 @@ export async function testCRUD() {
   await testUpdateKeyValuePair();
 
   await testDeleteKeyValuePair();
+
+  await testTryGetNonExistentKey();
+
+  await testTryAddSameKeyTwice();
+
+  await testTryUpdateNonExistentKey();
+
+  await testTryDeleteNonExistentKey();
 }
