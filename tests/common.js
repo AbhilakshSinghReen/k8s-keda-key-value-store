@@ -56,7 +56,7 @@ async function addRandomKeyValuePair() {
 }
 
 async function updateKeyValuePair(key) {
-  const randomValue = "";
+  const randomValue = generateRandomString();
 
   const requestBody = {
     value: randomValue,
@@ -76,6 +76,9 @@ async function updateKeyValuePair(key) {
   const responseData = response.json();
 
   return {
+    queryData: {
+      key: key,
+    },
     requestData: requestBody,
     responseStatus: response.status,
     responseData: responseData,
@@ -83,7 +86,7 @@ async function updateKeyValuePair(key) {
 }
 
 async function deleteKeyValuePair(key) {
-  const response = http.delete(`${apiBaseUrl}/data/delete/${key}`, JSON.stringify(requestBody), requestParams);
+  const response = http.del(`${apiBaseUrl}/data/delete/${key}`);
 
   check(response, {
     "content type JSON": (res) => res.headers["Content-Type"] === "application/json",
@@ -92,10 +95,75 @@ async function deleteKeyValuePair(key) {
   const responseData = response.json();
 
   return {
-    requestData: requestBody,
     responseStatus: response.status,
     responseData: responseData,
   };
 }
 
-export async function testCRUD() {}
+async function testAddKeyValuePair() {
+  const addRandomResult = await addRandomKeyValuePair();
+
+  check(addRandomResult, {
+    "check response status": (result) => result.responseStatus === 200,
+  });
+
+  const getResult = await getKeyValuePair(addRandomResult.requestData.key);
+
+  check(getResult, {
+    "check response status": (result) => result.responseStatus === 200,
+    "check key": (result) => result.responseData.result.key === addRandomResult.requestData.key,
+    "check value": (result) => result.responseData.result.value === addRandomResult.requestData.value,
+  });
+}
+
+async function testUpdateKeyValuePair() {
+  const addRandomResult = await addRandomKeyValuePair();
+
+  check(addRandomResult, {
+    "check response status": (result) => result.responseStatus === 200,
+  });
+
+  const updateResult = await updateKeyValuePair(addRandomResult.requestData.key);
+
+  check(updateResult, {
+    "check response status": (result) => result.responseStatus === 200,
+  });
+
+  const getResult = await getKeyValuePair(addRandomResult.requestData.key);
+
+  check(getResult, {
+    "check response status": (result) => result.responseStatus === 200,
+    "check get key": (result) => result.responseData.result.key === addRandomResult.requestData.key,
+    "check get value": (result) => result.responseData.result.value === updateResult.requestData.value,
+  });
+}
+
+async function testDeleteKeyValuePair() {
+  const addRandomResult = await addRandomKeyValuePair();
+
+  check(addRandomResult, {
+    "check response status": (result) => result.responseStatus === 200,
+  });
+
+  sleep(0.01);
+
+  const deleteResult = await deleteKeyValuePair(addRandomResult.requestData.key);
+
+  check(deleteResult, {
+    "check response status": (result) => result.responseStatus === 200,
+  });
+
+  const getResult = await getKeyValuePair(addRandomResult.requestData.key);
+
+  check(getResult, {
+    "check response status": (result) => result.responseStatus === 404,
+  });
+}
+
+export async function testCRUD() {
+  await testAddKeyValuePair();
+
+  await testUpdateKeyValuePair();
+
+  await testDeleteKeyValuePair();
+}
