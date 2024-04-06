@@ -2,3 +2,5 @@
 
 **/env_worker
 **/env_server
+
+server-worker/.dockerignore
