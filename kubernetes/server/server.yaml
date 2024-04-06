@@ -17,7 +17,7 @@ spec:
       containers:
       - name: key-value-store-server
         image: abhilakshsinghreen/k8s-key-value-store-server:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
         resources:

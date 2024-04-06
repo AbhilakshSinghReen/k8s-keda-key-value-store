@@ -17,7 +17,7 @@ spec:
       containers:
       - name: key-value-store-worker
         image: abhilakshsinghreen/k8s-key-value-store-worker:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         resources:
           limits:
             cpu: 100m
@@ -25,6 +25,9 @@ spec:
           requests:
             cpu: 100m
             memory: 256Mi
+        env:
+        - name: TASK_DELAY
+          value: "0"
         envFrom:
         - configMapRef:
             name: key-value-store-redis-config
