@@ -1,6 +1,5 @@
 import http from "k6/http";
 import { sleep, check } from "k6";
-// import {v4 as uuidv4} from "uuid"
 
 const apiBaseUrl = "http://localhost:8000/api";
 const interRequestSleepTime = 0.01;
@@ -110,6 +109,8 @@ async function testAddKeyValuePair() {
   sleep(interRequestSleepTime);
 
   const getResult = await getKeyValuePair(addRandomResult.requestData.key);
+  console.log(addRandomResult)
+  console.log(getResult)
   check(getResult, {
     "check response status": (result) => result.responseStatus === 200,
     "check key": (result) => result.responseData.result.key === addRandomResult.requestData.key,
