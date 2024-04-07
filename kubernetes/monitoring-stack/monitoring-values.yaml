@@ -8,6 +8,14 @@ prometheus:
   alertmanager:
     persistentVolume:
       enabled: false
+  extraScrapeConfigs: |
+    - job_name: key-value-store-server-metrics
+      metrics_path: '/metrics'
+      scrape_interval: 5s
+      static_configs:
+        - targets: ['key-value-store-server-metrics.keda:9001']
+          labels:
+            application: 'key-value-store-server'
 
 loki:
   enabled: true
