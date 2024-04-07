@@ -26,7 +26,7 @@ async function getKeyValuePair(key) {
   };
 }
 
-async function addKeyValuePair(inputKey = null, inputValue = null) {
+export async function addKeyValuePair(inputKey = null, inputValue = null) {
   const key = inputKey !== null ? inputKey : generateRandomString();
   const value = inputValue !== null ? inputValue : generateRandomString();
 

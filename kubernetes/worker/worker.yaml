@@ -18,16 +18,9 @@ spec:
       - name: key-value-store-worker
         image: abhilakshsinghreen/k8s-key-value-store-worker:latest
         imagePullPolicy: IfNotPresent
-        resources:
-          limits:
-            cpu: 100m
-            memory: 256Mi
-          requests:
-            cpu: 100m
-            memory: 256Mi
         env:
         - name: TASK_DELAY
-          value: "0"
+          value: "0.1"
         envFrom:
         - configMapRef:
             name: key-value-store-redis-config
