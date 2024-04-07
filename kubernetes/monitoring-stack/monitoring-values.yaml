@@ -1,0 +1,25 @@
+grafana:
+  enabled: true
+  service:
+    type: ClusterIP
+
+prometheus:
+  enabled: true
+  alertmanager:
+    persistentVolume:
+      enabled: false
+
+loki:
+  enabled: true
+  image:
+    tag: 2.9.3
+  persistence:
+    enabled: false
+    # enabled: true
+    # size: 1Gi
+
+promtail:
+    enabled: true
+    config:
+      clients:
+        - url: http://{{ .Release.Name }}-loki:3100/loki/api/v1/push
