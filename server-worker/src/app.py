@@ -1,9 +1,16 @@
+from os import environ
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+import prometheus_client
 
 from .models import AddKeyValuePairRequest, UpdateKeyValuePairRequest
 from .redis_client import redis_client
 from .tasks import delete_key_value_pair, set_key_value_pair
+
+# Expose Prometheus metrics at the specified port.
+METRICS_PORT = int(environ["METRICS_PORT"])
+prometheus_client.start_http_server(METRICS_PORT)
 
 
 app = FastAPI()
