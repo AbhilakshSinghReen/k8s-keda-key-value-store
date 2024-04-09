@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alerter-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alerter-bot
+      component: alerter-bot
+  template:
+    metadata:
+      labels:
+        app: alerter-bot
+        component: alerter-bot
+    spec:
+      containers:
+      - name: server
+        image: abhilakshsinghreen/prom-alertmanager-webhooks:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - configMapRef:
+            name: alerter-bot-config
+        - secretRef:
+            name: alerter-bot-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alerter-bot
+spec:
+  selector:
+    app: alerter-bot
+    component: alerter-bot
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000

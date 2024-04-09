@@ -4,3 +4,5 @@
 **/env_server
 
 server-worker/.dockerignore
+
+**/.env
