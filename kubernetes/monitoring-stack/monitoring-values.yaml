@@ -1,0 +1,58 @@
+grafana:
+  enabled: true
+  service:
+    type: ClusterIP
+
+prometheus:
+  enabled: true
+  alertmanager:
+    persistentVolume:
+      enabled: false
+    config:
+      global:
+        resolve_timeout: 5m
+      route:
+        group_by: ['alertname']
+        group_wait: 5s
+        group_interval: 5s
+        repeat_interval: 30s
+        receiver: 'webhook'
+      receivers:
+      - name: 'webhook'
+        webhook_configs:
+        - url: 'http://alerter-bot:5000/webhooks/max-workers-reached?scaler=KEDA&namespace=keda&deployment=api-worker&numWorkers=5'
+  extraScrapeConfigs: |
+    - job_name: key-value-store-server-metrics
+      metrics_path: '/metrics'
+      scrape_interval: 5s
+      static_configs:
+        - targets: ['key-value-store-server-metrics.keda:9001']
+          labels:
+            application: 'key-value-store-server'
+  serverFiles:
+    alerting_rules.yml:
+      groups:
+        - name: worker_max_replicas_reached
+          rules:
+          - alert: worker_max_replicas_reached
+            expr: kube_deployment_status_replicas{deployment="key-value-store-worker", namespace="keda"} == 5
+            for: 30s
+            labels:
+              severity: page
+            annotations:
+              summary: Max replicas of worker pod have been reached. It will not scale any higher.
+
+loki:
+  enabled: true
+  image:
+    tag: 2.9.3
+  persistence:
+    enabled: false
+    # enabled: true
+    # size: 1Gi
+
+promtail:
+    enabled: true
+    config:
+      clients:
+        - url: http://{{ .Release.Name }}-loki:3100/loki/api/v1/push
